@@ -37,7 +37,7 @@ t = np.linspace(0,720,721)
 t = t/24 #Convert to days
 
 #Plot figure
-plt.figure()
+plt.figure("Question A")
 plt.plot(t,Mboxarray,"r")
 plt.xlabel("Time [days]")
 plt.ylabel("$NO_x$ Concentration [kgN/box]")
@@ -91,15 +91,18 @@ k6 = 3600*(3.3e-12)*np.exp(270/T)
 k7 = 3600*(1e-14)*np.exp(-490/T)
 k8 = 3600*(1.7e-12)*np.exp(-940/T)
 
+#Arrays for question C
 cCOarray = [cCO]
 cCH4array = [cCH4]
 cO3array = [cO3]
 cNOinit = NOtoNOx*Carray[0]
 cNOarray = [cNOinit]
-cHO2con = [-k7*cO3*cHO2]
-cOHcon = [-k8*cO3*cOH]
-cNOcon = [k6*cNOinit*cHO2 ]
-dO3array = [k6*cNOinit*cHO2 - k7*cO3*cHO2 - k8*cO3*cOH]
+
+#Arrays for question D
+cNOprod = []
+cHO2loss = []
+cOHloss = []
+netO3prod = []
 
 
 
@@ -124,10 +127,6 @@ for i in range(1,721):
         conHO2 = -k7*cO3*cHO2
         conOH = -k8*cO3*cOH
         conNO = k6*cNO*cHO2
-        cHO2con.append(conHO2)
-        cNOcon.append(conNO)
-        cOHcon.append(conOH)
-        dO3array.append(dO3)
         cO3 = cO3 + dO3
 
         #Append values
@@ -154,29 +153,64 @@ for i in range(1,721):
         conHO2 = -k7*cO3*cHO2
         conOH = -k8*cO3*cOH
         conNO = k6*cNO*cHO2
-        cHO2con.append(conHO2)
-        cNOcon.append(conNO)
-        cOHcon.append(conOH)
-        dO3array.append(dO3)
         cO3 = cO3 + dO3
 
         # Append values
         cCOarray.append(cCO)
         cCH4array.append(cCH4)
         cO3array.append(cO3)
+        cHO2loss.append(conHO2)
+        cNOprod.append(conNO)
+        cOHloss.append(conOH)
+        netO3prod.append(dO3)
 
-plt.figure()
-#plt.plot(t,cCOarray,label="CO")
-#plt.plot(t,cCH4array,label="CH4")
+#Convert lists to arrays
+cCOarray = np.array(cCOarray)
+cCH4array = np.array(cCH4array)
+cO3array = np.array(cO3array)
+cHO2loss = np.array(cHO2loss)
+cHO2loss = cHO2loss/3600
+cNOprod = np.array(cNOprod)
+cNOprod = cNOprod/3600
+cOHloss = np.array(cOHloss)
+cOHloss = cOHloss/3600
+netO3prod = np.array(netO3prod)
+netO3prod = netO3prod/3600
 
-plt.plot(t,cNOarray)
-plt.figure()
-plt.plot(t,cO3array,label="O3")
-plt.figure()
-plt.plot(t,cHO2con)
-plt.plot(t,cOHcon)
-plt.plot(t,cNOcon)
-plt.plot(t,dO3array)
-#plt.plot(t,Carray,label="NOx")
-#plt.legend()
+#Plots for question C
+#Convert arrays to required ppbv
+COarray = (1e9)*cCOarray*((Mair*(10**6))/(rho_air*NA))
+CH4array = (1e8)*cCH4array*((Mair*(10**6))/(rho_air*NA))
+O3array = (1e10)*cO3array*((Mair*(10**6))/(rho_air*NA))
+ppCarray = (1e12)*Carray*((Mair*(10**6))/(rho_air*NA))
+print(O3array)
+
+
+
+
+#Plot
+plt.figure("Question C")
+plt.plot(t,COarray,label="$CO$ [ppbv]")
+plt.plot(t,CH4array,label="$CH_4$ [10 ppbv]" )
+plt.plot(t,O3array,label="$O_3$ [0.1 ppbv]")
+plt.plot(t,ppCarray,label="$NO_x$ [pptv]")
+plt.xlabel("Time [days]")
+plt.ylabel("Concentration [mol/mol]")
+plt.legend()
+plt.grid()
+
+ppCarray2 = ppCarray[241:]
+ppCarray2 = ppCarray2*(10**(-12))
+
+#Plots for question D
+plt.figure("Question D")
+plt.xscale("log")
+plt.plot(ppCarray2,netO3prod,label="Net $O_3$ production")
+plt.plot(ppCarray2,cNOprod,label="$NO + HO_2 \Longrightarrow NO + OH + O_3$")
+plt.plot(ppCarray2,cHO2loss,label="$O_3 + HO_2 \Longrightarrow 2O_2 + OH$")
+plt.plot(ppCarray2,cOHloss,label="$O_3 + OH \Longrightarrow O_2 + HO_2$")
+plt.xlabel("$NO_x$ Concentration [mol/mol]")
+plt.ylabel("Concentration [molec cm$^{-3}$]")
+plt.legend()
+plt.grid()
 plt.show()
