@@ -12,6 +12,7 @@ P = 0.004166666666666667 #kgN per hour
 L = 0.9834714538 #per hour
 a = 1/L
 b = a - 1
+T = 293 #Kelvin
 
 #Production in molec/cm3/hr
 Cprod = P*(10**-15)*(MN**-1)*NA
@@ -41,5 +42,141 @@ plt.plot(t,Mboxarray,"r")
 plt.xlabel("Time [days]")
 plt.ylabel("$NO_x$ Concentration [kgN/box]")
 plt.grid()
-plt.show()
+#plt.show()
 
+## NOx Ratios
+
+#Initial values
+k1 = 3e-12 * np.exp(-1500/T)
+k2 = 5e-3
+k3 = 5.1e-12 * np.exp(210/T)
+O3 = 45e-9 #ppbv
+Ozoneratio = 5e-6
+
+#Convert O3 concentration to molec/cm3
+CO3 = (O3*rho_air*NA)/(Mair*(10**6))
+
+NOtoNO2 = k2/(k1*CO3) + (k3/k1)*Ozoneratio
+NOtoNOx = 1/(1+(1/NOtoNO2))
+
+
+#Questions C and D
+#Initial values
+COprod = 12 #kg/day
+CH4prod = 0.24 #kg/day
+COinit = (140e-9) #mol/mol
+CH4init = (1900e-9) #ppbv
+O3init = (45e-9) #ppbv
+OH = 1.5e6 #molec/cm3
+HO2 = 450e6 #molec/cm3
+cair = (NA*(1/(10**6)))/29
+MCH4 = 16 #kg/kmol
+MCO = 28 #kg/kmol
+cOH = 1.5e6
+cHO2 = 450e6
+
+#VMR to C conversion
+cCH4 = CH4init*rho_air*NA/(Mair*(10**6)) #molec/cm3
+cO3 = O3init*rho_air*NA/(Mair*(10**6)) #molec/cm3
+cCO = COinit*rho_air*NA/(Mair*(10**6)) #molec/cm3
+
+#Production terms to molec/cm3 hr
+COprod = COprod*NA/(24*MCO*Vbox*(10**6))
+CH4prod = CH4prod*NA/(24*MCH4*Vbox*(10**6))
+
+#Reaction Rate Constants (times 3600 to have rate per hour)
+k4 = 3600*(1.57e-13)+cair*(3.54e-33) #cm3/molec*hr
+k5 = 3600*(1.85e-20)*np.exp((2.82*np.log10(T)-987)/T)
+k6 = 3600*(3.3e-12)*np.exp(270/T)
+k7 = 3600*(1e-14)*np.exp(-490/T)
+k8 = 3600*(1.7e-12)*np.exp(-940/T)
+
+cCOarray = [cCO]
+cCH4array = [cCH4]
+cO3array = [cO3]
+cNOinit = NOtoNOx*Carray[0]
+cNOarray = [cNOinit]
+cHO2con = [-k7*cO3*cHO2]
+cOHcon = [-k8*cO3*cOH]
+cNOcon = [k6*cNOinit*cHO2 ]
+dO3array = [k6*cNOinit*cHO2 - k7*cO3*cHO2 - k8*cO3*cOH]
+
+
+
+for i in range(1,721):
+    if i<241:
+        #CO concentration
+        dCO = -k4*cCO*cOH
+        cCO = cCO + dCO
+
+        #CH4 concentration
+        dCH4 = -k5*cCH4*cOH
+        cCH4 = cCH4 + dCH4
+
+        #NO concentration
+        NOtoNO2 = k2 / (k1 * cO3) + (k3 / k1) * Ozoneratio
+        NOtoNOx = 1 / (1 + (1 / NOtoNO2))
+        cNO = NOtoNOx*Carray[i]
+        cNOarray.append(cNO)
+
+        #Ozone concentration
+        dO3 = k6*cNO*cHO2 - k7*cO3*cHO2 - k8*cO3*cOH
+        conHO2 = -k7*cO3*cHO2
+        conOH = -k8*cO3*cOH
+        conNO = k6*cNO*cHO2
+        cHO2con.append(conHO2)
+        cNOcon.append(conNO)
+        cOHcon.append(conOH)
+        dO3array.append(dO3)
+        cO3 = cO3 + dO3
+
+        #Append values
+        cCOarray.append(cCO)
+        cCH4array.append(cCH4)
+        cO3array.append(cO3)
+    else:
+        # CO concentration
+        dCO = -k4 * cCO * cOH + COprod
+        cCO = cCO + dCO
+
+        # CH4 concentration
+        dCH4 = -k5 * cCH4 * cOH + CH4prod
+        cCH4 = cCH4 + dCH4
+
+        # NO concentration
+        NOtoNO2 = k2 / (k1 * cO3) + (k3 / k1) * Ozoneratio
+        NOtoNOx = 1 / (1 + (1 / NOtoNO2))
+        cNO = NOtoNOx*Carray[i]
+        cNOarray.append(cNO)
+
+        # Ozone concentration
+        dO3 = k6 * cNO * cHO2 - k7 * cO3 * cHO2 - k8 * cO3 * cOH
+        conHO2 = -k7*cO3*cHO2
+        conOH = -k8*cO3*cOH
+        conNO = k6*cNO*cHO2
+        cHO2con.append(conHO2)
+        cNOcon.append(conNO)
+        cOHcon.append(conOH)
+        dO3array.append(dO3)
+        cO3 = cO3 + dO3
+
+        # Append values
+        cCOarray.append(cCO)
+        cCH4array.append(cCH4)
+        cO3array.append(cO3)
+
+plt.figure()
+#plt.plot(t,cCOarray,label="CO")
+#plt.plot(t,cCH4array,label="CH4")
+
+plt.plot(t,cNOarray)
+plt.figure()
+plt.plot(t,cO3array,label="O3")
+plt.figure()
+plt.plot(t,cHO2con)
+plt.plot(t,cOHcon)
+plt.plot(t,cNOcon)
+plt.plot(t,dO3array)
+#plt.plot(t,Carray,label="NOx")
+#plt.legend()
+plt.show()
