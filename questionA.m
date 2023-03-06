@@ -10,7 +10,6 @@ nonLTOlist = [];
 
 for i = drange(73:len)
    flag1 = T(i,15).Var15;
-   t1 = T(i,1).Var1;
    if flag1 ~= 0
        count = count + 1;
        t2 = T(i,1).Var1;
