@@ -6,7 +6,7 @@ clear all
 T1 = readtable('IAGOS_timeseries_2019021011295591','Delimiter',' '); 
 %Distance is in km
 [output1] = questionA(T1);
-%{
+
 %Read data 2
 T2 = readtable('IAGOS_timeseries_2019021102051591','Delimiter',' '); 
 %Distance is in km
@@ -41,4 +41,3 @@ T7 = readtable('IAGOS_timeseries_2019043020424591','Delimiter',' ');
 T8 = readtable('IAGOS_timeseries_2019050116041591','Delimiter',' '); 
 %Distance is in km
 [output8] = questionA(T8);
-%}
